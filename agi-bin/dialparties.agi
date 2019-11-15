@@ -896,6 +896,7 @@ function get_dial_string( $agi, $extnum, $use_confirmation, $ringgroup_index ) {
 				// Check to see if this is a PJSIP device. If so, grab
 				// the correct dial string from PJSIP_DIAL_CONTACTS.
 
+				if (empty($dds['data'])) continue;
 				$ds = $dds['data'];
 				if (substr($ds, 0, 5) === "PJSIP") {
 					debug("Discovered PJSIP Endpoint $ds", 2);
