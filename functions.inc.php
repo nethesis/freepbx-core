@@ -1356,6 +1356,8 @@ function core_do_get_config($engine) {
 
 				foreach ($grps as $grp) {
 					// Add GROPUEXTENSION_CONTEXT nethesis/dev#6039
+					$exten_data = \FreePBX::Core()->getDevice($exten);
+					$exten_context = (!empty($exten_data['context']) ? $exten_data['context'] : 'from-internal');
 					$picklist .= '&'.$grp.'@'.$exten_context;
 					$picklist .= '&'.$grp.'@from-internal-xfer';
 					$picklist .= '&'.$grp.'@ext-group';
