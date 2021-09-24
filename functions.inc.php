@@ -1270,7 +1270,6 @@ function core_do_get_config($engine) {
 			$ext->add('app-pickup', "_$fc_pickup.", '', new ext_macro('user-callerid'));
 			$ext->add('app-pickup', "_$fc_pickup.", '', new ext_set('PICKUP_EXTEN','${AMPUSER}'));
 			$ext->add('app-pickup', "_$fc_pickup.", '', new ext_agi('setContext.php,${EXTEN:'.$fclen.'}'));
-			$ext->add('app-pickup', "_$fc_pickup.", '', new ext_noop('${ext_context}'));
 			$ext->add('app-pickup', "_$fc_pickup.", '', new $ext_pickup($picklist));
 			$ext->add('app-pickup', "_$fc_pickup.", '', new ext_hangup(''));
 
