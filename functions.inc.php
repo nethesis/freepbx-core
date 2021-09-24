@@ -1280,7 +1280,6 @@ function core_do_get_config($engine) {
 				$ext->add('app-pickup', "_{$fc_pickup}{$intercom_code}.", '', new ext_macro('user-callerid'));
 				$ext->add('app-pickup', "_{$fc_pickup}{$intercom_code}.", '', new ext_set('PICKUP_EXTEN','${AMPUSER}'));
 				$ext->add('app-pickup', "_{$fc_pickup}{$intercom_code}.", '', new ext_agi('setContext.php,${EXTEN:'.$len.'}'));
-				$ext->add('app-pickup', "_{$fc_pickup}{$intercom_code}.", '', new ext_noop('${ext_context}'));
 				$ext->add('app-pickup', "_{$fc_pickup}{$intercom_code}.", '', new $ext_pickup($picklist));
 				$ext->add('app-pickup', "_{$fc_pickup}{$intercom_code}.", '', new ext_hangup(''));
 			}
