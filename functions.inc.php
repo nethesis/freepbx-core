@@ -1306,19 +1306,23 @@ function core_do_get_config($engine) {
 			$intercom_code = $fcc->getCodeActive();
 			unset($fcc);
 
-			$picklist = '${EXTEN:'.$fclen.'}';
+			// Add GROPUEXTENSION_CONTEXT nethesis/dev#6059
+
+			$picklist = '${EXTEN:'.$fclen.'}@${ext_context}';
 			$picklist .= '&${EXTEN:'.$fclen.'}@PICKUPMARK';
 			$ext->add('app-pickup', "_$fc_pickup.", '', new ext_macro('user-callerid'));
 			$ext->add('app-pickup', "_$fc_pickup.", '', new ext_set('PICKUP_EXTEN','${AMPUSER}'));
+			$ext->add('app-pickup', "_$fc_pickup.", '', new ext_agi('setContext.php,${EXTEN:'.$fclen.'}'));
 			$ext->add('app-pickup', "_$fc_pickup.", '', new $ext_pickup($picklist));
 			$ext->add('app-pickup', "_$fc_pickup.", '', new ext_hangup(''));
 
 			if ($intercom_code != '') {
 				$len = strlen($fc_pickup.$intercom_code);
-				$picklist  = '${EXTEN:'.$len.'}';
+				$picklist  = '${EXTEN:'.$len.'}@${ext_context}';
 				$picklist .= '&${EXTEN:'.$len.'}@PICKUPMARK';
 				$ext->add('app-pickup', "_{$fc_pickup}{$intercom_code}.", '', new ext_macro('user-callerid'));
 				$ext->add('app-pickup', "_{$fc_pickup}{$intercom_code}.", '', new ext_set('PICKUP_EXTEN','${AMPUSER}'));
+				$ext->add('app-pickup', "_{$fc_pickup}{$intercom_code}.", '', new ext_agi('setContext.php,${EXTEN:'.$len.'}'));
 				$ext->add('app-pickup', "_{$fc_pickup}{$intercom_code}.", '', new $ext_pickup($picklist));
 				$ext->add('app-pickup', "_{$fc_pickup}{$intercom_code}.", '', new ext_hangup(''));
 			}
@@ -1344,11 +1348,15 @@ function core_do_get_config($engine) {
 			// so we need to generate the callpickup dialplan for these specific extensions
 			// to try the ringgoup.
 			foreach ($rg_members as $exten => $grps) {
-				$picklist  = $exten;
+				// Add GROPUEXTENSION_CONTEXT nethesis/dev#6059
+				$exten_data = \FreePBX::Core()->getDevice($exten);
+				$exten_context = (!empty($exten_data['context']) ? $exten_data['context'] : 'from-internal');
+				$picklist  = $exten.'@'.$exten_context;
 				$picklist .= '&'.$exten.'@PICKUPMARK';
 
 				foreach ($grps as $grp) {
-					$picklist .= '&'.$grp.'@from-internal';
+					// Add GROPUEXTENSION_CONTEXT nethesis/dev#6039
+					$picklist .= '&'.$grp.'@'.$exten_context;
 					$picklist .= '&'.$grp.'@from-internal-xfer';
 					$picklist .= '&'.$grp.'@ext-group';
 				}
