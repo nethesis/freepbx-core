@@ -5,7 +5,7 @@
 #    Copyright (C) 2021 Nethesis S.r.l.
 #    http://www.nethesis.it - support@nethesis.it
 #
-#    This file is part of ReturnOnTransfer FreePBX module.
+#    This file is part of FreePBX
 #
 #    ReturnOnTransfer module is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
