@@ -2,7 +2,7 @@
 <?php
 
 #
-#    Copyright (C) 2018 Nethesis S.r.l.
+#    Copyright (C) 2021 Nethesis S.r.l.
 #    http://www.nethesis.it - support@nethesis.it
 #
 #    This file is part of ReturnOnTransfer FreePBX module.
