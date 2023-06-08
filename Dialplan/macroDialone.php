@@ -132,6 +132,7 @@ class macroDialone{
 
 		$exten = 'cf';
 		$ext->add($mcontext,$exten,'', new \ext_set('CFAMPUSER', '${IF($["${AMPUSER}"=""]?${CALLERID(number)}:${AMPUSER})}'));
+		$ext->add($mcontext,$exten,'', new ext_execif('$["${DB(AMPUSER/${DB_RESULT}/cidnum)}" == ""]', 'Set','__REALCALLERIDNUM=${DEXTEN}'));
 		$ext->add($mcontext,$exten,'', new \ext_execif('$["${DB(CF/${DEXTEN})}"="${CFAMPUSER}" | "${DB(CF/${DEXTEN})}"="${REALCALLERIDNUM}" | "${CUT(CUT(BLINDTRANSFER,-,1),/,1)}" = "${DB(CF/${DEXTEN})}" | "${DEXTEN}"="${DB(CF/${DEXTEN})}"]', 'Return'));
 		$ext->add($mcontext,$exten,'', new \ext_execif('$["${DB(AMPUSER/${DEXTEN}/cfringtimer)}" != "0" & "${DB(AMPUSER/${DEXTEN}/cfringtimer)}" != ""]', 'Set', 'ARG1=${IF($["${DB(AMPUSER/${DEXTEN}/cfringtimer)}"="-1"]? : ${DB(AMPUSER/${DEXTEN}/cfringtimer)})}'));
 		// FREEPBX-11431 Call Forward Ringtimer Default - Setting does not work
