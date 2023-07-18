@@ -1027,7 +1027,11 @@ class PJSip extends \FreePBX\modules\Core\Drivers\Sip {
 				// If there's a specific local net for this interface, add it too.
 				$localnet = $this->freepbx->Sipsettings->getConfig($protocol."localnet-$ip");
 				if ($localnet) {
-					$transport[$t]['local_net'][] =  $localnet;
+					if ($localnet === 'none') {
+						$transport[$t]['local_net'] = [];
+					} else {
+						$transport[$t]['local_net'][] =  $localnet;
+					}
 				}
 			}
 		}
