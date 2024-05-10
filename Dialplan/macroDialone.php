@@ -200,7 +200,8 @@ class macroDialone{
 
 		$exten = 'dlocal';
 		//$ext->add($mcontext,$exten,'', new \ext_set('DSTRING', 'Local/${DEXTEN:0:${MATH(${LEN(${DEXTEN})}-1,int)}}@from-internal/n'));
-		$ext->add($mcontext,$exten,'', new \ext_set('DSTRING', '${IF($["${ARG1}"=""]?${DEXTEN:0:${MATH(${LEN(${DEXTEN})}-1,int)}}:Local/${DEXTEN:0:${MATH(${LEN(${DEXTEN})}-1,int)}}@from-internal/n)}'));
+		$ext->add($mcontext,$exten,'', new \ext_agi('setContext.php,${EXTTOCALL}'));
+		$ext->add($mcontext,$exten,'', new \ext_set('DSTRING', '${IF($["${ARG1}"=""]?${DEXTEN:0:${MATH(${LEN(${DEXTEN})}-1,int)}}:Local/${DEXTEN:0:${MATH(${LEN(${DEXTEN})}-1,int)}}@${ext_context}/n)}'));
 		$ext->add($mcontext,$exten,'', new \ext_set('USEGOTO', '${IF($["${ARG1}"=""]?1:0)}'));
 		$ext->add($mcontext,$exten,'', new \ext_return(''));
 
