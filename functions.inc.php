@@ -3602,7 +3602,8 @@ function core_do_get_config($engine) {
 	$ext->add($mcontext,$exten,'', new ext_gotoif('$["${DB(AMPUSER/${EXTTOCALL}/cfringtimer)}"="-1"|("${ARG1}"="novm"&"${ARG3}"="1")]', 'from-internal,${DB(CFU/${EXTTOCALL})},1'));
 	$ext->add($mcontext,$exten,'', new ext_set("RTCF", '${IF($["${DB(AMPUSER/${EXTTOCALL}/cfringtimer)}"="0"]?${RT}:${DB(AMPUSER/${EXTTOCALL}/cfringtimer)})}'));
 	$ext->add($mcontext,$exten,'', new ext_execif('$["${DIRECTION}" = "INBOUND"]', 'Set', 'DIAL_OPTIONS=${STRREPLACE(DIAL_OPTIONS,T)}'));
-	$ext->add($mcontext,$exten,'', new ext_dial('Local/${DB(CFU/${EXTTOCALL})}@from-internal/n', '${RTCF},${DIAL_OPTIONS}'));
+	$ext->add($mcontext,$exten,'', new ext_agi('setContext.php,${EXTTOCALL}'));
+	$ext->add($mcontext,$exten,'', new ext_dial('Local/${DB(CFU/${EXTTOCALL})}@${ext_context}/n', '${RTCF},${DIAL_OPTIONS}'));
 	if ($amp_conf['DIVERSIONHEADER']) $ext->add($mcontext,$exten,'', new ext_set('__DIVERSION_REASON', ''));
 	$ext->add($mcontext,$exten,'', new ext_return(''));
 
@@ -3612,7 +3613,8 @@ function core_do_get_config($engine) {
 	$ext->add($mcontext,$exten,'', new ext_gotoif('$["${DB(AMPUSER/${EXTTOCALL}/cfringtimer)}"="-1"|("${ARG1}"="novm"&"${ARG4}"="1")]', 'from-internal,${DB(CFB/${EXTTOCALL})},1'));
 	$ext->add($mcontext,$exten,'', new ext_set("RTCF", '${IF($["${DB(AMPUSER/${EXTTOCALL}/cfringtimer)}"="0"]?${RT}:${DB(AMPUSER/${EXTTOCALL}/cfringtimer)})}'));
 	$ext->add($mcontext,$exten,'', new ext_execif('$["${DIRECTION}" = "INBOUND"]', 'Set', 'DIAL_OPTIONS=${STRREPLACE(DIAL_OPTIONS,T)}'));
-	$ext->add($mcontext,$exten,'', new ext_dial('Local/${DB(CFB/${EXTTOCALL})}@from-internal/n', '${RTCF},${DIAL_OPTIONS}'));
+	$ext->add($mcontext,$exten,'', new ext_agi('setContext.php,${EXTTOCALL}'));
+	$ext->add($mcontext,$exten,'', new ext_dial('Local/${DB(CFB/${EXTTOCALL})}@${ext_context}/n', '${RTCF},${DIAL_OPTIONS}'));
 	if ($amp_conf['DIVERSIONHEADER']) $ext->add($mcontext,$exten,'', new ext_set('__DIVERSION_REASON', ''));
 	$ext->add($mcontext,$exten,'', new ext_return(''));
 
@@ -3699,7 +3701,8 @@ function core_do_get_config($engine) {
 	$ext->add($mcontext,$exten,'', new ext_dial('Local/${CFUEXT}@ext-local', '${RT},${DIAL_OPTIONS}'));
 	$ext->add($mcontext,$exten,'', new ext_return(''));
 	$ext->add($mcontext,$exten,'chlocal', new ext_execif('$["${DIRECTION}" = "INBOUND"]', 'Set', 'DIAL_OPTIONS=${STRREPLACE(DIAL_OPTIONS,T)}'));
-	$ext->add($mcontext,$exten,'', new ext_dial('Local/${CFUEXT}@from-internal/n', '${RT},${DIAL_OPTIONS}'));
+	$ext->add($mcontext,$exten,'', new ext_agi('setContext.php,${EXTTOCALL}'));
+	$ext->add($mcontext,$exten,'', new ext_dial('Local/${CFUEXT}@${ext_context}/n', '${RT},${DIAL_OPTIONS}'));
 	$ext->add($mcontext,$exten,'', new ext_return(''));
 
 	$exten = 'docfb';
@@ -3707,7 +3710,8 @@ function core_do_get_config($engine) {
 	$ext->add($mcontext,$exten,'', new ext_dial('Local/${CFBEXT}@ext-local', '${RT},${DIAL_OPTIONS}'));
 	$ext->add($mcontext,$exten,'', new ext_return(''));
 	$ext->add($mcontext,$exten,'chlocal', new ext_execif('$["${DIRECTION}" = "INBOUND"]', 'Set', 'DIAL_OPTIONS=${STRREPLACE(DIAL_OPTIONS,T)}'));
-	$ext->add($mcontext,$exten,'', new ext_dial('Local/${CFBEXT}@from-internal/n', '${RT},${DIAL_OPTIONS}'));
+	$ext->add($mcontext,$exten,'', new ext_agi('setContext.php,${EXTTOCALL}'));
+	$ext->add($mcontext,$exten,'', new ext_dial('Local/${CFBEXT}@${ext_context}/n', '${RT},${DIAL_OPTIONS}'));
 	$ext->add($mcontext,$exten,'', new ext_return(''));
 
 	/*
