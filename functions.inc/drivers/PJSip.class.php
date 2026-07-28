@@ -58,6 +58,10 @@ class PJSip extends \FreePBX\modules\Core\Drivers\Sip {
 				"value" => $this->freepbx->Core()->generateSecret(),
 				"flag" => $flag++
 			),
+			"md5_cred" => array(
+				"value" => "",
+				"flag" => $flag++
+			),
 			"dtmfmode" => array(
 				"value" => $dtmf,
 				"flag" => $flag++
@@ -132,6 +136,10 @@ class PJSip extends \FreePBX\modules\Core\Drivers\Sip {
 			),
 			"media_use_received_transport" => array(
 				"value" => "no",
+				"flag" => $flag++
+			),
+			"media_address" => array(
+				"value" => "",
 				"flag" => $flag++
 			),
 			"rtp_symmetric" => array(
@@ -343,6 +351,9 @@ class PJSip extends \FreePBX\modules\Core\Drivers\Sip {
 		$tmparr['direct_media'] = array('prompttext' => _('Direct Media'), 'value' => 'yes', 'tt' => $tt, 'select' => $select, 'level' => 1, 'type' => 'radio');
 		unset($select);
 
+		$tt = _("IP address used in SDP for media handling. At the time of SDP creation, the IP address defined here will be used with this parameter.");
+		$tmparr['media_address'] = array('prompttext' => _('Media Address'), 'value' => '', 'tt' => $tt, 'level' => 1);
+
 		$select[] = array('value' => 'no', 'text' => _('No'));
 		$select[] = array('value' => 'yes', 'text' => _('Yes'));
 		$tt = _("Determines whether encryption should be used if possible but does not terminate the session if not achieved. This option only applies if Media Encryption is not set to None.").' [media_encryption_optimistic]';
@@ -444,7 +455,7 @@ class PJSip extends \FreePBX\modules\Core\Drivers\Sip {
 			$conf['pjsip.transports.conf'][$transport] = $tmparr;
 		}
 
-		$ver_list = array("13.24.0", "16.1.0", "17.0.0", "18.0.0");
+		$ver_list = array("13.24.0", "16.1.0", "17.0.0", "18.0.0","20.0.0");
         if(version_min($this->freepbx->Config->get('ASTVERSION'), $ver_list) == true){
   			$use_callerid_contact = \FreePBX::create()->Sipsettings->getConfig('pjsip_use_callerid_contact');
 			$use_callerid_contact = (empty($use_callerid_contact))? "no": $use_callerid_contact;
@@ -837,7 +848,7 @@ class PJSip extends \FreePBX\modules\Core\Drivers\Sip {
 			}
 		}
 
-		if(!empty($this->_identify) && is_array($this->_indentify)) {
+		if(!empty($this->_identify) && is_array($this->_identify)) {
 			foreach($this->_identify as $section => $els) {
 				$conf["pjsip.identify.conf"][$section][] = "type=identify";
 				foreach($els as $el) {
@@ -1200,10 +1211,14 @@ class PJSip extends \FreePBX\modules\Core\Drivers\Sip {
 		}
 		$endpoint[] = "dtmf_mode=".$config['dtmfmode'];
 
+		if (!empty($config['media_address'])) {
+			$endpoint[] = "media_address=".$config['media_address'];
+		}
+
 		if (!empty($config['direct_media'])) {
 			$endpoint[] = "direct_media=".$config['direct_media'];
 		}
-
+		
 		if (!empty($config['vmexten'])) {
 			$endpoint[] = "voicemail_extension=".$config['vmexten'];
 		}
@@ -1392,8 +1407,13 @@ class PJSip extends \FreePBX\modules\Core\Drivers\Sip {
                 }
 
 		// Auth
-		$auth[] = "auth_type=userpass";
-		$auth[] = "password=".$config['secret'];
+		if (!empty($config['md5_cred'])) {
+			$auth[] = "auth_type=md5";
+			$auth[] = "md5_cred=".$config['md5_cred'];
+		} else {
+			$auth[] = "auth_type=userpass";
+			$auth[] = "password=".$config['secret'];
+		}
 		$auth[] = "username=".$config['username'];
 
 		// AOR
