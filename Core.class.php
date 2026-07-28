@@ -1068,53 +1068,90 @@ class Core extends FreePBX_Helpers implements BMO  {
 			// Check if they uploaded a CSV file for their route patterns
 			//
 			if (isset($_FILES['pattern_file']) && $_FILES['pattern_file']['tmp_name'] != '') {
-				$mimes = array('text/csv');
-				if (!in_array($_FILES['pattern_file']['type'], $mimes)) {
-					echo "<script>javascript:alert('" . _("Unsupported Pattern file format") . "')</script>";
-					return;
-				}
-				$fh = fopen($_FILES['pattern_file']['tmp_name'], 'r');
-				if ($fh !== false) {
+				$uploaded_file = file($_FILES['pattern_file']['tmp_name'], FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+				if (count($uploaded_file) !== 0) {
 					$csv_file = array();
 					$index = array();
-
-					// Check first row, ingoring empty rows and get indices setup
-					//
-					while (($row = fgetcsv($fh, 5000, ",", "\"")) !== false) {
-						if (count($row) == 1 && $row[0] == '') {
-							continue;
-						} else {
-							$count = count($row) > 4 ? 4 : count($row);
-							for ($i=0;$i<$count;$i++) {
-								switch (strtolower($row[$i])) {
+				}
+				$first_line = true;
+				$has_headers = false;
+				$field_regex = '/^[XZN0-9+\.\-\[\]\*]*$/i';
+				foreach($uploaded_file AS $line) {
+					$line = str_replace('"', '', $line);
+					$delimiter = (substr_count($line, "\t") > substr_count($line, ",")) ? "\t" : ",";
+					$line_as_array = str_getcsv($line, $delimiter);
+					foreach ($line_as_array as $k => $v) {
+						$line_as_array[$k] = trim($v);
+					}
+					if ($first_line) {
+						// header detection
+						if (str_contains(strtolower($line), 'prepend') ||
+							str_contains(strtolower($line), 'prefix') ||
+							str_contains(strtolower($line), 'match pattern') ||
+							str_contains(strtolower($line), 'callerid')) {
+							$has_headers = true;
+							$count_headers = count($line_as_array);
+							for ($i=0;$i<$count_headers;$i++) {
+								switch (strtolower($line_as_array[$i])) {
 									case 'prepend':
 									case 'prefix':
 									case 'match pattern':
 									case 'callerid':
-										$index[strtolower($row[$i])] = $i;
-									break;
-									default:
+										$index[strtolower($line_as_array[$i])] = $i;
 									break;
 								}
 							}
-							// If no headers then assume standard order
-							if (count($index) == 0) {
-								$index['prepend'] = 0;
-								$index['prefix'] = 1;
-								$index['match pattern'] = 2;
-								$index['callerid'] = 3;
-								if ($count == 4) {
-									$csv_file[] = $row;
-								}
+							$first_line = false;
+							continue;
+						}
+						// no headers
+						if (count($line_as_array) != 4) {
+							echo "<script>alert('" . _("Unsupported Pattern file format") . "')</script>";
+							return;
+						}
+						$index['prepend'] = 0;
+						$index['prefix'] = 1;
+						$index['match pattern'] = 2;
+						$index['callerid'] = 3;
+						// validate fields
+						foreach ($line_as_array as $cell) {
+							if (!preg_match($field_regex, $cell)) {
+								echo "<script>alert('" . _("Unsupported Pattern file format") . "')</script>";
+								return;
 							}
-							break;
+						}
+						$csv_file[] = $line_as_array;
+						$first_line = false;
+						continue;
+					}
+					if ($has_headers) {
+						// bad column count
+						if (count($line_as_array) != $count_headers) {
+							echo "<script>alert('" . _("Malformated csv file") . "')</script>";
+							return;
+						}
+						// validate each field
+						foreach ($line_as_array as $cell) {
+							if (!preg_match($field_regex, $cell)) {
+								echo "<script>alert('" . _("Unsupported Pattern file format") . "')</script>";
+								return;
+							}
+						}
+					} else {
+						if (count($line_as_array) != 4) {
+							echo "<script>alert('" . _("Unsupported Pattern file format") . "')</script>";
+							return;
+						}
+						foreach ($line_as_array as $cell) {
+							if (!preg_match($field_regex, $cell)) {
+								echo "<script>alert('" . _("Unsupported Pattern file format") . "')</script>";
+								return;
+							}
 						}
 					}
-					$row_count = count($index);
-					while (($row = fgetcsv($fh, 5000, ",", "\"")) !== false) {
-						if (count($row) == $row_count) {
-							$csv_file[] = $row;
-						}
+					$index_count = count($index);
+					if (count($line_as_array) == $index_count) {
+						$csv_file[] = $line_as_array;
 					}
 				}
 			}
@@ -1171,8 +1208,6 @@ class Core extends FreePBX_Helpers implements BMO  {
 						'match_pattern_pass' => htmlspecialchars(trim($list)),
 						'match_cid' => htmlspecialchars(trim($this_callerid)),
 					);
-
-					$i++;
 				}
 			} else if (isset($_REQUEST["dialpatterndata"])) {
 				$dp = json_decode($_REQUEST['dialpatterndata'],true);
@@ -3127,7 +3162,11 @@ class Core extends FreePBX_Helpers implements BMO  {
 		$fpc = $this->FreePBX->Config();
 		if ($astman->connected()) {
 			$astman->database_put("AMPUSER",$extension."/cwtone",isset($settings['cwtone']) ? $settings['cwtone'] : '');
-			$astman->database_put("AMPUSER",$extension."/accountcode",!empty($settings["accountcode"]) ? $settings["accountcode"] : '');
+			if( !empty($settings["devinfo_accountcode"]) ){
+				$astman->database_put("AMPUSER",$extension."/accountcode",$settings["devinfo_accountcode"]);
+			} else {
+				$astman->database_put("AMPUSER",$extension."/accountcode",!empty($settings["accountcode"]) ? $settings["accountcode"] : '');
+			}
 			$astman->database_put("AMPUSER",$extension."/rvolume",isset($settings['rvolume']) ? $settings['rvolume'] : '');
 			$astman->database_put("AMPUSER",$extension."/password",isset($settings['password']) ? $settings['password'] : '');
 			$astman->database_put("AMPUSER",$extension."/ringtimer",isset($settings['ringtimer']) ? $settings['ringtimer'] : $fpc->get('RINGTIMER'));
@@ -4505,5 +4544,77 @@ class Core extends FreePBX_Helpers implements BMO  {
 	private function setPresenceState($device, $type) {
 		$astman = $this->FreePBX->astman;
 		$astman->set_global(\FreePBX::Config()->get_conf_setting('AST_FUNC_PRESENCE_STATE') . '(CustomPresence:' . $device . ')', '"'.$type . ',,"');
+	}
+
+	public function getAstdbConfigs($extension) {
+		$results = [];
+		$astman = $this->FreePBX->astman;
+		if ($astman->connected()) {
+
+			if ($this->FreePBX->Modules->checkStatus("paging")) {
+				$answermode=$astman->database_get("AMPUSER",$extension."/answermode");
+				$results['answermode'] = (trim($answermode) == '') ? $this->freepbx->Config->get("DEFAULT_INTERNAL_AUTO_ANSWER") : $answermode;
+
+				$intercom=$astman->database_get("AMPUSER",$extension."/intercom");
+				$results['intercom'] = (trim($intercom) == '') ? 'enabled' : $intercom;
+			}
+
+			$cw = $astman->database_get("CW",$extension);
+			$results['callwaiting'] = (trim($cw) == 'ENABLED') ? 'enabled' : 'disabled';
+			$cid_masquerade=$astman->database_get("AMPUSER",$extension."/cidnum");
+			$results['cid_masquerade'] = (trim($cid_masquerade) != "")?$cid_masquerade:$extension;
+
+			$call_screen=$astman->database_get("AMPUSER",$extension."/screen");
+			$results['call_screen'] = (trim($call_screen) != "")?$call_screen:'0';
+
+			$pinless=$astman->database_get("AMPUSER",$extension."/pinless");
+			$results['pinless'] = (trim($pinless) == 'NOPASSWD') ? 'enabled' : 'disabled';
+
+			$results['ringtimer'] = (int) $astman->database_get("AMPUSER",$extension."/ringtimer");
+
+			$results['cfringtimer'] = (int) $astman->database_get("AMPUSER",$extension."/cfringtimer");
+			$results['concurrency_limit'] = (int) $astman->database_get("AMPUSER",$extension."/concurrency_limit");
+
+			$results['dialopts'] = $astman->database_get("AMPUSER",$extension."/dialopts");
+
+			$results['cwtone'] = $astman->database_get("AMPUSER",$extension."/cwtone");
+
+			$results['recording_in_external'] = strtolower($astman->database_get("AMPUSER",$extension."/recording/in/external"));
+			$results['recording_out_external'] = strtolower($astman->database_get("AMPUSER",$extension."/recording/out/external"));
+			$results['recording_in_internal'] = strtolower($astman->database_get("AMPUSER",$extension."/recording/in/internal"));
+			$results['recording_out_internal'] = strtolower($astman->database_get("AMPUSER",$extension."/recording/out/internal"));
+			$results['recording_ondemand'] = strtolower($astman->database_get("AMPUSER",$extension."/recording/ondemand"));
+			$results['recording_priority'] = (int) $astman->database_get("AMPUSER",$extension."/recording/priority");
+			$results['rvolume'] = strtolower($astman->database_get("AMPUSER",$extension."/rvolume"));
+			$results['novmpw'] = strtolower($astman->database_get("AMPUSER",$extension."/novmpw"));
+
+		} else {
+			throw new \Exception("Cannot connect to Asterisk Manager with using user[".$this->FreePBX->Config->get("AMPMGRUSER")."]");
+		}
+		return $results;
+	}
+
+	public function putAstdbConfigs($configs) {
+		$astman = $this->FreePBX->astman;
+		//add details to astdb
+		if ($astman->connected()) {
+			$replace_char = ['recording_in_external','recording_out_external','recording_in_internal','recording_out_internal','recording_ondemand','recording_priority'];
+			foreach ($configs as $ext => $confs) {
+				foreach ($confs as $key => $value) {
+					if(in_array($key,$replace_char)) {
+						$key = str_replace("_","/",$key);
+					}
+					if($key == 'callwaiting') {
+						$astman->database_put("CW",$ext,strtoupper($value));
+					} else if($key == 'dialopts') {
+						if($value) {
+							$astman->database_put("AMPUSER",$ext."/".$key,$value);
+						}
+					} else {
+						$astman->database_put("AMPUSER",$ext."/".$key,$value);
+					}
+				}
+			}
+		}
 	}
 }

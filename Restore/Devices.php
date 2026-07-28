@@ -4,7 +4,10 @@ namespace FreePBX\modules\Core\Restore;
 
 class Devices extends Corebase{
 	public function setConfigs($configs){
-		$this->updateDevices($configs);
+		if(count($configs) > 0){
+			$this->updateDevices($configs);
+		}
+		$this->FreePBX->Core->devices2astdb();
 		return $this;
 	}
 
@@ -19,6 +22,5 @@ class Devices extends Corebase{
 				$sth->execute($row);
 			}
 		}
-		$this->FreePBX->Core->devices2astdb();
 	}
 }

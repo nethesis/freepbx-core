@@ -162,7 +162,6 @@ class core_conf {
 	function generate_http_additional($ast_version) {
 		$freepbxConfCreate = freepbx_conf::create();
 		$freepbx_conf =& $freepbxConfCreate;
-
 		$output = "[general]\n";
 		$output .= "enabled=".($freepbx_conf->get_conf_setting('HTTPENABLED') ? 'yes' : 'no')."\n";
 		$output .= "enablestatic=".($freepbx_conf->get_conf_setting('HTTPENABLESTATIC') ? 'yes' : 'no')."\n";
@@ -1177,6 +1176,10 @@ function core_do_get_config($engine) {
 		$fcc = new featurecode($modulename, 'chanspy');
 		$fc_chanspy = $fcc->getCodeActive();
 		unset($fcc);
+        
+        $fcc = new featurecode($modulename, 'callseize');
+        $fc_callseize = $fcc->getCodeActive();
+        unset($fcc);
 
 		$fcc = new featurecode($modulename, 'simu_pstn');
 		$fc_simu_pstn = $fcc->getCodeActive();
@@ -1470,6 +1473,16 @@ function core_do_get_config($engine) {
 			$ext->add('app-chanspy', $fc_chanspy, '', new ext_chanspy(''));
 			$ext->add('app-chanspy', $fc_chanspy, '', new ext_hangup(''));
 		}
+        
+        // call seize
+        if ($fc_callseize != '') {
+        	$ext->addInclude('from-internal-additional', 'app-callseize'); // Add the include from from-internal
+          	$ext->add('app-callseize', "_$fc_callseize.", '', new ext_macro('user-callerid'));
+          	$ext->add('app-callseize', "_$fc_callseize.", '', new ext_noop('${CALLERID(num)} is seizing the call from ${EXTEN:'.strlen($fc_callseize).'}'));
+          	$ext->add('app-callseize', "_$fc_callseize.", '', new ext_bridge('${IMPORT(${CHANNELS(${EXTEN:'.strlen($fc_callseize).'})},BRIDGEPEER)}'));
+          	$ext->add('app-callseize', "_$fc_callseize.", '', new ext_execif('$["${BRIDGERESULT}"!="SUCCESS"]','Playback','im-sorry&an-error-has-occurred&please-try-again-later&goodbye'));
+          	$ext->add('app-callseize', "_$fc_callseize.", '', new ext_hangup(''));
+        }
 
 		// Simulate Inbound call
 		if ($fc_simu_pstn != '') {
@@ -2256,6 +2269,7 @@ function core_do_get_config($engine) {
 			}
 			if ($route['outcid'] != '') {
 				if ($route['outcid_mode'] != '') {
+					$ext->add($context, $exten, '', new ext_execif('$[${LEN(${ATTENDEDTRANSFER})}!=0]','Set','KEEPCID='));
 					$ext->add($context, $exten, '', new ext_execif('$["${KEEPCID}"!="TRUE" & ${LEN(${TRUNKCIDOVERRIDE})}=0]','Set','TRUNKCIDOVERRIDE='.$route['outcid']));
 				} else {
 					$ext->add($context, $exten, '', new ext_execif('$["${KEEPCID}"!="TRUE" & ${LEN(${DB(AMPUSER/${AMPUSER}/outboundcid)})}=0 & ${LEN(${TRUNKCIDOVERRIDE})}=0]','Set','TRUNKCIDOVERRIDE='.$route['outcid']));
@@ -2497,6 +2511,8 @@ function core_do_get_config($engine) {
 		$exten = 's';
 		$ext->add($context, $exten, '', new ext_set('DIAL_TRUNK', '${ARG1}'));
 		$ext->add($context, $exten, '', new ext_execif('$["${DIRECTION}" = "INBOUND"]', 'Set', 'DIAL_OPTIONS=${STRREPLACE(DIAL_OPTIONS,T)}'));
+		$ext->add($context, $exten, '', new ext_execif('$["${QCALLBACK}" = "1"]', 'Set', 'DIAL_OPTIONS=${STRREPLACE(DIAL_OPTIONS,t)}'));
+		$ext->add($context, $exten, '', new ext_execif('$["${QCALLBACK}" = "1"]', 'Set', 'DIAL_OPTIONS=${STRREPLACE(DIAL_OPTIONS,T)}'));
 		$ext->add($context, $exten, '', new ext_gosubif('$[$["${ARG3}" != ""] & $["${DB(AMPUSER/${AMPUSER}/pinless)}" != "NOPASSWD"]]','sub-pincheck,s,1'));
 		$ext->add($context, $exten, '', new ext_execif('$["${INTRACOMPANYROUTE}" = "YES" & ${DB_EXISTS(AMPUSER/${AMPUSER}/cidnum)} & "${AMPUSER}" != "${DB(AMPUSER/${AMPUSER}/cidnum)}"]', 'Set', 'CALLERID(num)=${DB(AMPUSER/${AMPUSER}/cidnum)}'));
 		$ext->add($context, $exten, '', new ext_gotoif('$["x${OUTDISABLE_${DIAL_TRUNK}}" = "xon"]', 'disabletrunk,1'));
@@ -2504,6 +2520,7 @@ function core_do_get_config($engine) {
 		$ext->add($context, $exten, '', new ext_set('DIAL_TRUNK_OPTIONS', '${DIAL_OPTIONS}')); // will be reset to TRUNK_OPTIONS if not intra-company
 		$ext->add($context, $exten, '', new ext_set('OUTBOUND_GROUP', 'OUT_${DIAL_TRUNK}'));
 		$ext->add($context, $exten, '', new ext_set('DIAL_TRUNK_OPTIONS', '${IF($["${DB_EXISTS(TRUNK/${DIAL_TRUNK}/dialopts)}" = "1"]?${DB_RESULT}:${TRUNK_OPTIONS})}'));
+		$ext->add($context, $exten, '', new ext_execif('$["${QCALLBACK}" = "1"]', 'Set', 'DIAL_TRUNK_OPTIONS=${STRREPLACE(DIAL_TRUNK_OPTIONS,T)}'));
 		$ext->add($context, $exten, '', new ext_gotoif('$["${OUTMAXCHANS_${DIAL_TRUNK}}" = ""]', 'nomax'));
 		$ext->add($context, $exten, '', new ext_gotoif('$[ ${GROUP_COUNT(OUT_${DIAL_TRUNK})} >= ${OUTMAXCHANS_${DIAL_TRUNK}} ]', 'chanfull'));
 		$ext->add($context, $exten, 'nomax', new ext_gotoif('$["${INTRACOMPANYROUTE}" = "YES"]', 'skipoutcid'));  // Set to YES if treated like internal
@@ -4347,7 +4364,8 @@ function core_trunks_disable($trunk, $switch) {
 		case 'reg':
 		case 'registered':
 			foreach (core_trunks_getDetails() as $t) {
-				if($reg = FreePBX::Core()->getTrunkRegisterStringByID($t['trunkid'])) {
+				$tech = FreePBX::Core()->getTrunkTech($t['trunkid']);
+				if(($tech == 'chan_sip' && FreePBX::Core()->getTrunkRegisterStringByID($t['trunkid'])) || ($tech == 'pjsip')) {
 					$trunks[] = $t;
 				}
 			}

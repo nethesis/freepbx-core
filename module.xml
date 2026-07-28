@@ -3,13 +3,44 @@
 	<repo>standard</repo>
 	<category>Applications</category>
 	<name>Core</name>
-	<version>16.0.68.9</version>
+	<version>16.0.68.40</version>
 	<publisher>Sangoma Technologies Corporation</publisher>
 	<license>GPLv3+</license>
 	<licenselink>http://www.gnu.org/licenses/gpl-3.0.txt</licenselink>
 	<candisable>no</candisable>
 	<canuninstall>no</canuninstall>
 	<changelog>
+		*16.0.68.40* FREEI-2512 pattern matching to allow * for prefix column in dial part 
+		*16.0.68.39* Packaging of ver 16.0.68.39
+		*16.0.68.38* FREEI-2317  HTTP Bind Address Setting &#x2013; Adjusted for Local Access Only 
+		*16.0.68.37* FREEI-2317  HTTP Bind Address Setting &#x2013; Adjusted for Local Access Only 
+		*16.0.68.36* GitHUB Issue #870 
+		*16.0.68.35* FREEI-2148 added webrtc bundle column into csv 
+		*16.0.68.34* #iissue/771  and #issues/769 Increased the column length 
+		*16.0.68.33* #issues/740 backup and restore ignores outbound routes notifications 
+		*16.0.68.32* #678 revert Outbound Routes Dial patterns from CSV 
+		*16.0.68.31* #678 Outbound Routes Dial patterns from CSV 
+		*16.0.68.30* Packaging of ver 16.0.68.30
+		*16.0.68.29* Packaging of ver 16.0.68.29
+		*16.0.68.28* Packaging of ver 16.0.68.28
+		*16.0.68.27* Packaging of ver 16.0.68.27
+		*16.0.68.26* Packaging of ver 16.0.68.26
+		*16.0.68.25* Fixing disable trunks on warmspare restore issue 
+		*16.0.68.24* FREEI-348 Fixing Uganda ringback tone issue 
+		*16.0.68.23* FREEI-314 Fixing Queue callback issue 
+		*16.0.68.22* FREEPBX-24324 
+		*16.0.68.21* FREEI-253 
+		*16.0.68.20* FREEPBX-24284 
+		*16.0.68.19* FREEI-176 
+		*16.0.68.18* FREEPBX-24135 
+		*16.0.68.17* FREEPBX-24135 
+		*16.0.68.16* Packaging of ver 16.0.68.16
+		*16.0.68.15* FREEI-5863 
+		*16.0.68.14* Packaging of ver 16.0.68.14
+		*16.0.68.13* Packaging of ver 16.0.68.13
+		*16.0.68.12* FREEPBX-24135 and FREEPBX-24141 
+		*16.0.68.11* Packaging of ver 16.0.68.11
+		*16.0.68.10* Packaging of ver 16.0.68.10
 		*16.0.68.9* FREEI-5679 
 		*16.0.68.8* FREEPBX-23201 , FREEI-5569 
 		*16.0.68.7* Packaging of ver 16.0.68.7
@@ -159,8 +190,9 @@
 		*16.0.1alpha1* Inital Release
 	</changelog>
 	<depends>
-		<version>16.0.32</version>
-		<module>framework ge 16.0.32</module>
+		<version>16.0.40.1</version>
+		<module>framework ge 16.0.40.1</module>
+		<module>backup ge 16.0.63</module>
 	</depends>
 	<database>
 		<table name="trunks">
@@ -214,7 +246,7 @@
 			<field name="dial" type="string" length="255" default=""/>
 			<field name="devicetype" type="string" length="5" default=""/>
 			<field name="user" type="string" length="50" notnull="false"/>
-			<field name="description" type="string" length="50" notnull="false"/>
+			<field name="description" type="string" length="80" notnull="false"/>
 			<field name="emergency_cid" type="string" length="100" notnull="false"/>
 			<field name="hint_override" type="string" length="100" notnull="false"/>
 			<key name="id" type="index">
@@ -248,13 +280,13 @@
 		<table name="incoming">
 			<field name="cidnum" type="string" length="50" notnull="false"/>
 			<field name="extension" type="string" length="50"/>
-			<field name="destination" type="string" length="50" notnull="false"/>
+			<field name="destination" type="string" length="60" notnull="false"/>
 			<field name="privacyman" type="boolean" notnull="false"/>
 			<field name="alertinfo" type="string" length="255" notnull="false"/>
 			<field name="ringing" type="string" length="20" notnull="false"/>
 			<field name="fanswer" type="string" length="20" notnull="false"/>
 			<field name="mohclass" type="string" length="80" default="default"/>
-			<field name="description" type="string" length="80" notnull="false"/>
+			<field name="description" type="string" length="100" notnull="false"/>
 			<field name="grppre" type="string" length="80" notnull="false"/>
 			<field name="delay_answer" type="integer" notnull="false"/>
 			<field name="pricid" type="string" length="20" notnull="false"/>
@@ -266,7 +298,7 @@
 		</table>
 		<table name="dahdichandids">
 			<field name="channel" type="integer" default="0" primaryKey="true"/>
-			<field name="description" type="string" length="40" default=""/>
+			<field name="description" type="string" length="80" default=""/>
 			<field name="did" type="string" length="60" default=""/>
 		</table>
 		<table name="outbound_route_patterns">
