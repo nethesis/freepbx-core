@@ -33,5 +33,8 @@ $sql2 = "SELECT data FROM sip where `keyword`='context' and `id` = :extension";
 $sth = $db->prepare($sql2);
 $sth->execute(array(':extension' => $extension));
 $extension_context = $sth->fetch(\PDO::FETCH_COLUMN);
+if (empty($extension_context)) {
+    $extension_context = 'from-internal';
+}
 
 @$agi->exec("Set", "ext_context=$extension_context");
